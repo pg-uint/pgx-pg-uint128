@@ -1,0 +1,10 @@
+issues:
+  exclude-generated: disable
+  exclude-dirs:
+    - examples
+  exclude:
+    - "struct literal uses unkeyed fields"
+
+linters:
+  disable:
+    - unused
