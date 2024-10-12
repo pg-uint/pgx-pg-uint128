@@ -115,6 +115,7 @@ LEFT JOIN LATERAL (
 	} else {
 		q = strings.Replace(q, "{mrr_typeid}", "0::oid", 1)
 		q = strings.Replace(q, "{mrr_typename}", "''", 1)
+		q = strings.Replace(q, "{mrr_join}", "", 1)
 	}
 
 	return q
