@@ -1,11 +1,11 @@
 # pgx-pg-uint128
 
-**pgx-pg-uint128** adds support for the [pg-uint128](https://github.com/codercms/pg-uint128) PostgreSQL extension in
+**pgx-pg-uint128** adds support for the [pg-uint128](https://github.com/pg-uint/pg-uint128) PostgreSQL extension in
 the Go [pgx](https://github.com/jackc/pgx) driver.
 
 ## Requirements
 
-- PostgreSQL 12+ with the [pg-uint128](https://github.com/codercms/pg-uint128) extension installed
+- PostgreSQL 12+ with the [pg-uint128](https://github.com/pg-uint/pg-uint128) extension installed
 - `pgx` driver version 5.6.0+
 - `Go` version 1.21+
 
