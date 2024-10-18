@@ -1669,14 +1669,14 @@ const TYPE_INCLUDES = [
     "math",
     "strconv",
     "",
-    "github.com/codercms/pgx-pg-uint128/pgio",
+    "github.com/pg-uint/pgx-pg-uint128/pgio",
     "",
     "." => "github.com/jackc/pgx/v5/pgtype",
     "",
     "lukechampine.com/uint128",
     "",
     "go.shabbyrobe.org/num",
-    "github.com/codercms/pgx-pg-uint128/int128",
+    "github.com/pg-uint/pgx-pg-uint128/int128",
 ];
 
 const TYPE_ZERONULL_INCLUDES = [
@@ -1684,7 +1684,7 @@ const TYPE_ZERONULL_INCLUDES = [
     "fmt",
     "math",
     "",
-    "github.com/codercms/pgx-pg-uint128/types"
+    "github.com/pg-uint/pgx-pg-uint128/types"
 ];
 
 $header = <<<GO

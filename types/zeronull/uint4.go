@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"math"
 
-	"github.com/codercms/pgx-pg-uint128/types"
+	"github.com/pg-uint/pgx-pg-uint128/types"
 )
 
 type UInt4 uint32

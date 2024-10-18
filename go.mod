@@ -1,4 +1,4 @@
-module github.com/codercms/pgx-pg-uint128
+module github.com/pg-uint/pgx-pg-uint128
 
 go 1.21
 

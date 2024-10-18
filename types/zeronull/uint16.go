@@ -6,7 +6,7 @@ import (
 	"database/sql/driver"
 	"fmt"
 
-	"github.com/codercms/pgx-pg-uint128/types"
+	"github.com/pg-uint/pgx-pg-uint128/types"
 	"lukechampine.com/uint128"
 )
 

@@ -13,7 +13,7 @@ import (
 	"testing"
 	"time"
 
-	. "github.com/codercms/pgx-pg-uint128/types"
+	. "github.com/pg-uint/pgx-pg-uint128/types"
 )
 
 var defaultConnTestRunner pgxtest.ConnTestRunner

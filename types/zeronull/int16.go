@@ -5,7 +5,7 @@ package zeronull
 import (
 	"database/sql/driver"
 
-	"github.com/codercms/pgx-pg-uint128/types"
+	"github.com/pg-uint/pgx-pg-uint128/types"
 	"go.shabbyrobe.org/num"
 )
 

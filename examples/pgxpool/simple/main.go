@@ -12,8 +12,8 @@ import (
 	"go.shabbyrobe.org/num"
 	"lukechampine.com/uint128"
 
-	"github.com/codercms/pgx-pg-uint128/types"
-	"github.com/codercms/pgx-pg-uint128/types/zeronull"
+	"github.com/pg-uint/pgx-pg-uint128/types"
+	"github.com/pg-uint/pgx-pg-uint128/types/zeronull"
 )
 
 func main() {

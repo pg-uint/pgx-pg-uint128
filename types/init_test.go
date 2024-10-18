@@ -1,7 +1,8 @@
 package types_test
 
 import (
-	. "github.com/codercms/pgx-pg-uint128/types"
+	. "github.com/pg-uint/pgx-pg-uint128/types"
+
 	"github.com/jackc/pgx/v5/pgtype"
 	"go.shabbyrobe.org/num"
 	"lukechampine.com/uint128"

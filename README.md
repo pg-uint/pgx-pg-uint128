@@ -38,7 +38,7 @@ the Go [pgx](https://github.com/jackc/pgx) driver.
 To add `pgx-pg-uint128` to your Go project, run:
 
 ```sh
-go get github.com/codercms/pgx-pg-uint128
+go get github.com/pg-uint/pgx-pg-uint128
 ```
 
 ## Usage
@@ -53,8 +53,8 @@ import (
 
 	"github.com/jackc/pgx/v5"
 
-	"github.com/codercms/pgx-pg-uint128/types"
-	"github.com/codercms/pgx-pg-uint128/types/zeronull"
+	"github.com/pg-uint/pgx-pg-uint128/types"
+	"github.com/pg-uint/pgx-pg-uint128/types/zeronull"
 )
 
 func main() {

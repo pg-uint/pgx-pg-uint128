@@ -9,13 +9,13 @@ import (
 	"math"
 	"strconv"
 
-	"github.com/codercms/pgx-pg-uint128/pgio"
+	"github.com/pg-uint/pgx-pg-uint128/pgio"
 
 	. "github.com/jackc/pgx/v5/pgtype"
 
 	"lukechampine.com/uint128"
 
-	"github.com/codercms/pgx-pg-uint128/int128"
+	"github.com/pg-uint/pgx-pg-uint128/int128"
 	"go.shabbyrobe.org/num"
 )
 
