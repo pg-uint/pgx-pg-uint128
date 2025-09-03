@@ -13,6 +13,32 @@ import (
 	"go.shabbyrobe.org/num"
 )
 
+func TestInt16Binary_ScanUint8(t *testing.T) {
+	var dst uint8
+
+	assert.NoError(t,
+		typeMap.Scan(Int16OID, pgtype.BinaryFormatCode, []byte("\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xFF"), &dst),
+	)
+
+	assert.Equal(t, uint8(255), dst)
+}
+func TestInt16Binary_ScanUint8_Overflow(t *testing.T) {
+	var dst uint8
+
+	assert.ErrorContains(t,
+		typeMap.Scan(Int16OID, pgtype.BinaryFormatCode, []byte("\x7F\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF"), &dst),
+		`170141183460469231731687303715884105727 is greater than maximum value for uint8`,
+	)
+}
+func TestInt16Binary_ScanUint8_Underflow(t *testing.T) {
+	var dst uint8
+
+	assert.ErrorContains(t,
+		typeMap.Scan(Int16OID, pgtype.BinaryFormatCode, []byte("\x80\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"), &dst),
+		`-170141183460469231731687303715884105728 is less than minimum value for uint8`,
+	)
+}
+
 func TestInt16Binary_ScanUint16(t *testing.T) {
 	var dst uint16
 
@@ -135,6 +161,32 @@ func TestInt16Binary_ScanUint_Underflow(t *testing.T) {
 	)
 }
 
+func TestInt16Binary_ScanInt8(t *testing.T) {
+	var dst int8
+
+	assert.NoError(t,
+		typeMap.Scan(Int16OID, pgtype.BinaryFormatCode, []byte("\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x7F"), &dst),
+	)
+
+	assert.Equal(t, int8(127), dst)
+}
+func TestInt16Binary_ScanInt8_Overflow(t *testing.T) {
+	var dst int8
+
+	assert.ErrorContains(t,
+		typeMap.Scan(Int16OID, pgtype.BinaryFormatCode, []byte("\x7F\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF"), &dst),
+		`170141183460469231731687303715884105727 is greater than maximum value for int8`,
+	)
+}
+func TestInt16Binary_ScanInt8_Underflow(t *testing.T) {
+	var dst int8
+
+	assert.ErrorContains(t,
+		typeMap.Scan(Int16OID, pgtype.BinaryFormatCode, []byte("\x80\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"), &dst),
+		`-170141183460469231731687303715884105728 is less than minimum value for int8`,
+	)
+}
+
 func TestInt16Binary_ScanInt16(t *testing.T) {
 	var dst int16
 
@@ -246,6 +298,32 @@ func TestInt16Binary_ScanInt_Underflow(t *testing.T) {
 	assert.ErrorContains(t,
 		typeMap.Scan(Int16OID, pgtype.BinaryFormatCode, []byte("\x80\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"), &dst),
 		`-170141183460469231731687303715884105728 is less than minimum value for int`,
+	)
+}
+
+func TestInt16Text_ScanUint8(t *testing.T) {
+	var dst uint8
+
+	assert.NoError(t,
+		typeMap.Scan(Int16OID, pgtype.TextFormatCode, []byte("255"), &dst),
+	)
+
+	assert.Equal(t, uint8(255), dst)
+}
+func TestInt16Text_ScanUint8_Overflow(t *testing.T) {
+	var dst uint8
+
+	assert.ErrorContains(t,
+		typeMap.Scan(Int16OID, pgtype.TextFormatCode, []byte("170141183460469231731687303715884105727"), &dst),
+		`strconv.ParseUint: parsing "170141183460469231731687303715884105727": value out of range`,
+	)
+}
+func TestInt16Text_ScanUint8_Underflow(t *testing.T) {
+	var dst uint8
+
+	assert.ErrorContains(t,
+		typeMap.Scan(Int16OID, pgtype.TextFormatCode, []byte("-170141183460469231731687303715884105728"), &dst),
+		`strconv.ParseUint: parsing "-170141183460469231731687303715884105728": invalid syntax`,
 	)
 }
 
@@ -368,6 +446,32 @@ func TestInt16Text_ScanUint_Underflow(t *testing.T) {
 	assert.ErrorContains(t,
 		typeMap.Scan(Int16OID, pgtype.TextFormatCode, []byte("-170141183460469231731687303715884105728"), &dst),
 		`strconv.ParseUint: parsing "-170141183460469231731687303715884105728": invalid syntax`,
+	)
+}
+
+func TestInt16Text_ScanInt8(t *testing.T) {
+	var dst int8
+
+	assert.NoError(t,
+		typeMap.Scan(Int16OID, pgtype.TextFormatCode, []byte("127"), &dst),
+	)
+
+	assert.Equal(t, int8(127), dst)
+}
+func TestInt16Text_ScanInt8_Overflow(t *testing.T) {
+	var dst int8
+
+	assert.ErrorContains(t,
+		typeMap.Scan(Int16OID, pgtype.TextFormatCode, []byte("170141183460469231731687303715884105727"), &dst),
+		`strconv.ParseInt: parsing "170141183460469231731687303715884105727": value out of range`,
+	)
+}
+func TestInt16Text_ScanInt8_Underflow(t *testing.T) {
+	var dst int8
+
+	assert.ErrorContains(t,
+		typeMap.Scan(Int16OID, pgtype.TextFormatCode, []byte("-170141183460469231731687303715884105728"), &dst),
+		`strconv.ParseInt: parsing "-170141183460469231731687303715884105728": value out of range`,
 	)
 }
 

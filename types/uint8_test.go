@@ -13,6 +13,24 @@ import (
 	"go.shabbyrobe.org/num"
 )
 
+func TestUInt8Binary_ScanUint8(t *testing.T) {
+	var dst uint8
+
+	assert.NoError(t,
+		typeMap.Scan(UInt8OID, pgtype.BinaryFormatCode, []byte("\x00\x00\x00\x00\x00\x00\x00\xFF"), &dst),
+	)
+
+	assert.Equal(t, uint8(255), dst)
+}
+func TestUInt8Binary_ScanUint8_Overflow(t *testing.T) {
+	var dst uint8
+
+	assert.ErrorContains(t,
+		typeMap.Scan(UInt8OID, pgtype.BinaryFormatCode, []byte("\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF"), &dst),
+		`18446744073709551615 is greater than maximum value for uint8`,
+	)
+}
+
 func TestUInt8Binary_ScanUint16(t *testing.T) {
 	var dst uint16
 
@@ -77,6 +95,34 @@ func TestUInt8Binary_ScanUint(t *testing.T) {
 	)
 
 	assert.Equal(t, uint(18446744073709551615), dst)
+}
+func TestUInt8Binary_ScanUint_Overflow(t *testing.T) {
+	var dst uint
+
+	if intSize == 32 {
+		assert.ErrorContains(t,
+			typeMap.Scan(UInt8OID, pgtype.BinaryFormatCode, []byte("\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF"), &dst),
+			`18446744073709551615 is greater than maximum value for uint`,
+		)
+	}
+}
+
+func TestUInt8Binary_ScanInt8(t *testing.T) {
+	var dst int8
+
+	assert.NoError(t,
+		typeMap.Scan(UInt8OID, pgtype.BinaryFormatCode, []byte("\x00\x00\x00\x00\x00\x00\x00\x7F"), &dst),
+	)
+
+	assert.Equal(t, int8(127), dst)
+}
+func TestUInt8Binary_ScanInt8_Overflow(t *testing.T) {
+	var dst int8
+
+	assert.ErrorContains(t,
+		typeMap.Scan(UInt8OID, pgtype.BinaryFormatCode, []byte("\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF"), &dst),
+		`18446744073709551615 is greater than maximum value for int8`,
+	)
 }
 
 func TestUInt8Binary_ScanInt16(t *testing.T) {
@@ -161,6 +207,24 @@ func TestUInt8Binary_ScanInt_Overflow(t *testing.T) {
 	)
 }
 
+func TestUInt8Text_ScanUint8(t *testing.T) {
+	var dst uint8
+
+	assert.NoError(t,
+		typeMap.Scan(UInt8OID, pgtype.TextFormatCode, []byte("255"), &dst),
+	)
+
+	assert.Equal(t, uint8(255), dst)
+}
+func TestUInt8Text_ScanUint8_Overflow(t *testing.T) {
+	var dst uint8
+
+	assert.ErrorContains(t,
+		typeMap.Scan(UInt8OID, pgtype.TextFormatCode, []byte("18446744073709551615"), &dst),
+		`strconv.ParseUint: parsing "18446744073709551615": value out of range`,
+	)
+}
+
 func TestUInt8Text_ScanUint16(t *testing.T) {
 	var dst uint16
 
@@ -233,6 +297,34 @@ func TestUInt8Text_ScanUint(t *testing.T) {
 	)
 
 	assert.Equal(t, uint(18446744073709551615), dst)
+}
+func TestUInt8Text_ScanUint_Overflow(t *testing.T) {
+	var dst uint
+
+	if intSize == 32 {
+		assert.ErrorContains(t,
+			typeMap.Scan(UInt8OID, pgtype.TextFormatCode, []byte("18446744073709551615"), &dst),
+			`strconv.ParseUint: parsing "18446744073709551615": value out of range`,
+		)
+	}
+}
+
+func TestUInt8Text_ScanInt8(t *testing.T) {
+	var dst int8
+
+	assert.NoError(t,
+		typeMap.Scan(UInt8OID, pgtype.TextFormatCode, []byte("127"), &dst),
+	)
+
+	assert.Equal(t, int8(127), dst)
+}
+func TestUInt8Text_ScanInt8_Overflow(t *testing.T) {
+	var dst int8
+
+	assert.ErrorContains(t,
+		typeMap.Scan(UInt8OID, pgtype.TextFormatCode, []byte("18446744073709551615"), &dst),
+		`strconv.ParseInt: parsing "18446744073709551615": value out of range`,
+	)
 }
 
 func TestUInt8Text_ScanInt16(t *testing.T) {

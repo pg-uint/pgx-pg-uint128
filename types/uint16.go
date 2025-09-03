@@ -32,6 +32,9 @@ func (n UInt16) Int64Value() (Int8, error) {
 }
 
 func (n UInt16) Uint64Value() (UInt8, error) {
+	if n.Uint128.Cmp64(math.MaxUint64) > 0 {
+		return UInt8{}, fmt.Errorf("UInt16 value is greater than max UInt8 value")
+	}
 	return UInt8{Uint64: n.Uint128.Lo, Valid: n.Valid}, nil
 }
 
@@ -261,6 +264,8 @@ func (UInt16Codec) PlanScan(m *Map, oid uint32, format int16, target any) ScanPl
 	switch format {
 	case BinaryFormatCode:
 		switch target.(type) {
+		case *uint8:
+			return scanPlanBinaryUInt16ToUint8{}
 		case *uint16:
 			return scanPlanBinaryUInt16ToUint16{}
 		case *uint32:
@@ -271,6 +276,8 @@ func (UInt16Codec) PlanScan(m *Map, oid uint32, format int16, target any) ScanPl
 			return scanPlanBinaryUInt16ToUint128{}
 		case *uint:
 			return scanPlanBinaryUInt16ToUint{}
+		case *int8:
+			return scanPlanBinaryUInt16ToInt8{}
 		case *int16:
 			return scanPlanBinaryUInt16ToInt16{}
 		case *int32:
@@ -290,6 +297,8 @@ func (UInt16Codec) PlanScan(m *Map, oid uint32, format int16, target any) ScanPl
 		}
 	case TextFormatCode:
 		switch target.(type) {
+		case *uint8:
+			return scanPlanTextUInt16ToUint8{}
 		case *uint16:
 			return scanPlanTextUInt16ToUint16{}
 		case *uint32:
@@ -300,6 +309,8 @@ func (UInt16Codec) PlanScan(m *Map, oid uint32, format int16, target any) ScanPl
 			return scanPlanTextUInt16ToUint128{}
 		case *uint:
 			return scanPlanTextUInt16ToUint{}
+		case *int8:
+			return scanPlanTextUInt16ToInt8{}
 		case *int16:
 			return scanPlanTextUInt16ToInt16{}
 		case *int32:
@@ -344,6 +355,31 @@ func (c UInt16Codec) DecodeValue(m *Map, oid uint32, format int16, src []byte) (
 		return nil, err
 	}
 	return n, nil
+}
+
+type scanPlanBinaryUInt16ToUint8 struct{}
+
+func (scanPlanBinaryUInt16ToUint8) Scan(src []byte, dst any) error {
+	if src == nil {
+		return fmt.Errorf("cannot scan NULL into %T", dst)
+	}
+
+	if len(src) != 16 {
+		return fmt.Errorf("invalid length for UInt16: %v", len(src))
+	}
+
+	p, ok := (dst).(*uint8)
+	if !ok {
+		return ErrScanTargetTypeChanged
+	}
+
+	n := pgio.ReadUint128(src)
+	if n.Cmp(u8MaxInU128) > 0 {
+		return fmt.Errorf("%s is greater than maximum value for uint8", n.String())
+	}
+	*p = uint8(n.Lo)
+
+	return nil
 }
 
 type scanPlanBinaryUInt16ToUint16 struct{}
@@ -465,6 +501,31 @@ func (scanPlanBinaryUInt16ToUint) Scan(src []byte, dst any) error {
 		return fmt.Errorf("%s is greater than maximum value for uint", n.String())
 	}
 	*p = uint(n.Lo)
+
+	return nil
+}
+
+type scanPlanBinaryUInt16ToInt8 struct{}
+
+func (scanPlanBinaryUInt16ToInt8) Scan(src []byte, dst any) error {
+	if src == nil {
+		return fmt.Errorf("cannot scan NULL into %T", dst)
+	}
+
+	if len(src) != 16 {
+		return fmt.Errorf("invalid length for UInt16: %v", len(src))
+	}
+
+	p, ok := (dst).(*int8)
+	if !ok {
+		return ErrScanTargetTypeChanged
+	}
+
+	n := pgio.ReadUint128(src)
+	if n.Cmp(s8MaxInU128) > 0 {
+		return fmt.Errorf("%s is greater than maximum value for int8", n.String())
+	}
+	*p = int8(n.Lo)
 
 	return nil
 }
@@ -663,6 +724,27 @@ func (scanPlanBinaryUInt16ToUint64Scanner) Scan(src []byte, dst any) error {
 	return s.ScanUint64(UInt8{Uint64: n.Lo, Valid: true})
 }
 
+type scanPlanTextUInt16ToUint8 struct{}
+
+func (scanPlanTextUInt16ToUint8) Scan(src []byte, dst any) error {
+	if src == nil {
+		return fmt.Errorf("cannot scan NULL into %T", dst)
+	}
+
+	p, ok := (dst).(*uint8)
+	if !ok {
+		return ErrScanTargetTypeChanged
+	}
+
+	n, err := strconv.ParseUint(string(src), 10, 8)
+	if err != nil {
+		return err
+	}
+
+	*p = uint8(n)
+	return nil
+}
+
 type scanPlanTextUInt16ToUint16 struct{}
 
 func (scanPlanTextUInt16ToUint16) Scan(src []byte, dst any) error {
@@ -765,6 +847,27 @@ func (scanPlanTextUInt16ToUint) Scan(src []byte, dst any) error {
 	}
 
 	*p = uint(n)
+	return nil
+}
+
+type scanPlanTextUInt16ToInt8 struct{}
+
+func (scanPlanTextUInt16ToInt8) Scan(src []byte, dst any) error {
+	if src == nil {
+		return fmt.Errorf("cannot scan NULL into %T", dst)
+	}
+
+	p, ok := (dst).(*int8)
+	if !ok {
+		return ErrScanTargetTypeChanged
+	}
+
+	n, err := strconv.ParseInt(string(src), 10, 8)
+	if err != nil {
+		return err
+	}
+
+	*p = int8(n)
 	return nil
 }
 

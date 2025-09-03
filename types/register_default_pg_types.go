@@ -9,22 +9,28 @@ import (
 import . "github.com/jackc/pgx/v5/pgtype"
 
 func RegisterDefaultPgTypeVariants(tMap *Map) {
+	registerDefaultPgTypeVariants[uint8](tMap, Uint1TypName)
 	registerDefaultPgTypeVariants[uint16](tMap, Uint2TypName)
 	registerDefaultPgTypeVariants[uint32](tMap, Uint4TypName)
 	registerDefaultPgTypeVariants[uint64](tMap, Uint8TypName)
 	registerDefaultPgTypeVariants[uint128.Uint128](tMap, Uint16TypName)
+	registerDefaultPgTypeVariants[int8](tMap, Int1TypName)
 	registerDefaultPgTypeVariants[num.I128](tMap, Int16TypName)
 
+	registerDefaultPgTypeVariants[Range[uint8]](tMap, Uint1TypName+"range")
 	registerDefaultPgTypeVariants[Range[uint16]](tMap, Uint2TypName+"range")
 	registerDefaultPgTypeVariants[Range[uint32]](tMap, Uint4TypName+"range")
 	registerDefaultPgTypeVariants[Range[uint64]](tMap, Uint8TypName+"range")
 	registerDefaultPgTypeVariants[Range[uint128.Uint128]](tMap, Uint16TypName+"range")
+	registerDefaultPgTypeVariants[Range[int8]](tMap, Int1TypName+"range")
 	registerDefaultPgTypeVariants[Range[num.I128]](tMap, Int16TypName+"range")
 
+	registerDefaultPgTypeVariants[Multirange[Range[uint8]]](tMap, Uint1TypName+"multirange")
 	registerDefaultPgTypeVariants[Multirange[Range[uint16]]](tMap, Uint2TypName+"multirange")
 	registerDefaultPgTypeVariants[Multirange[Range[uint32]]](tMap, Uint4TypName+"multirange")
 	registerDefaultPgTypeVariants[Multirange[Range[uint64]]](tMap, Uint8TypName+"multirange")
 	registerDefaultPgTypeVariants[Multirange[Range[uint128.Uint128]]](tMap, Uint16TypName+"multirange")
+	registerDefaultPgTypeVariants[Multirange[Range[int8]]](tMap, Int1TypName+"multirange")
 	registerDefaultPgTypeVariants[Multirange[Range[num.I128]]](tMap, Int16TypName+"multirange")
 }
 

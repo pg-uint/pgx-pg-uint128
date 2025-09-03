@@ -76,7 +76,7 @@ WITH types AS (
     SELECT
         typname AS _typname,
         typname::regtype::oid AS _oid
-    FROM unnest(ARRAY['uint2', 'uint4', 'uint8', 'uint16', 'int16']) AS typname
+    FROM unnest(ARRAY['uint1', 'uint2', 'uint4', 'uint8', 'uint16', 'int1', 'int16']) AS typname
 )
 SELECT
     oid,
@@ -162,6 +162,8 @@ func loadTypes(ctx context.Context, c *pgx.Conn) ([]*Type, error) {
 		}
 
 		switch typname {
+		case Uint1TypName:
+			typ.Codec = &UInt1Codec{}
 		case Uint2TypName:
 			typ.Codec = &UInt2Codec{}
 		case Uint4TypName:
@@ -170,6 +172,8 @@ func loadTypes(ctx context.Context, c *pgx.Conn) ([]*Type, error) {
 			typ.Codec = &UInt8Codec{}
 		case Uint16TypName:
 			typ.Codec = &UInt16Codec{}
+		case Int1TypName:
+			typ.Codec = &Int1Codec{}
 		case Int16TypName:
 			typ.Codec = &Int16Codec{}
 		default:
