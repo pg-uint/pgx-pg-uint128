@@ -683,9 +683,6 @@ func (scanPlanBinaryUInt1ToInt64Scanner) Scan(src []byte, dst any) error {
 	}
 
 	n := uint64(pgio.ReadUint8(src))
-	if n > math.MaxInt64 {
-		return fmt.Errorf("UInt1 value %d is greater than max value for Int8", n)
-	}
 
 	return s.ScanInt64(Int8{Int64: int64(n), Valid: true})
 }

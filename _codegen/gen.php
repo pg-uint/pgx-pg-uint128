@@ -1144,11 +1144,20 @@ function genCodecBinaryScanToInt64Scanner(Type $type): string
 
     $to = INT64_SCANNER;
 
-    $ending = <<<GO
-	n := $wideType({$type->getPGIoReadFuncName()}(src))
+    $overflowCheck = <<<GO
 	if n > $maxConst {
 	    return fmt.Errorf("$type->name value %d is greater than max value for Int8", n)
 	}
+GO;
+
+    if (!$type->canOverflow(INT64)) {
+        $overflowCheck = '';
+    }
+
+
+    $ending = <<<GO
+	n := $wideType({$type->getPGIoReadFuncName()}(src))
+{$overflowCheck}
 
 	return s.ScanInt64(Int8{Int64: int64(n), Valid: true})
 GO;
