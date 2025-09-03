@@ -254,6 +254,8 @@ func (Int16Codec) PlanScan(m *Map, oid uint32, format int16, target any) ScanPla
 	switch format {
 	case BinaryFormatCode:
 		switch target.(type) {
+		case *uint8:
+			return scanPlanBinaryInt16ToUint8{}
 		case *uint16:
 			return scanPlanBinaryInt16ToUint16{}
 		case *uint32:
@@ -264,6 +266,8 @@ func (Int16Codec) PlanScan(m *Map, oid uint32, format int16, target any) ScanPla
 			return scanPlanBinaryInt16ToUint128{}
 		case *uint:
 			return scanPlanBinaryInt16ToUint{}
+		case *int8:
+			return scanPlanBinaryInt16ToInt8{}
 		case *int16:
 			return scanPlanBinaryInt16ToInt16{}
 		case *int32:
@@ -283,6 +287,8 @@ func (Int16Codec) PlanScan(m *Map, oid uint32, format int16, target any) ScanPla
 		}
 	case TextFormatCode:
 		switch target.(type) {
+		case *uint8:
+			return scanPlanTextInt16ToUint8{}
 		case *uint16:
 			return scanPlanTextInt16ToUint16{}
 		case *uint32:
@@ -293,6 +299,8 @@ func (Int16Codec) PlanScan(m *Map, oid uint32, format int16, target any) ScanPla
 			return scanPlanTextInt16ToUint128{}
 		case *uint:
 			return scanPlanTextInt16ToUint{}
+		case *int8:
+			return scanPlanTextInt16ToInt8{}
 		case *int16:
 			return scanPlanTextInt16ToInt16{}
 		case *int32:
@@ -337,6 +345,34 @@ func (c Int16Codec) DecodeValue(m *Map, oid uint32, format int16, src []byte) (a
 		return nil, err
 	}
 	return n, nil
+}
+
+type scanPlanBinaryInt16ToUint8 struct{}
+
+func (scanPlanBinaryInt16ToUint8) Scan(src []byte, dst any) error {
+	if src == nil {
+		return fmt.Errorf("cannot scan NULL into %T", dst)
+	}
+
+	if len(src) != 16 {
+		return fmt.Errorf("invalid length for Int16: %v", len(src))
+	}
+
+	p, ok := (dst).(*uint8)
+	if !ok {
+		return ErrScanTargetTypeChanged
+	}
+
+	n := pgio.ReadInt128(src)
+	if n.Cmp64(0) < 0 {
+		return fmt.Errorf("%s is less than minimum value for uint8", n.String())
+	}
+	if n.Cmp(u8MaxInS128) > 0 {
+		return fmt.Errorf("%s is greater than maximum value for uint8", n.String())
+	}
+	*p = uint8(n.AsUint64())
+
+	return nil
 }
 
 type scanPlanBinaryInt16ToUint16 struct{}
@@ -473,6 +509,34 @@ func (scanPlanBinaryInt16ToUint) Scan(src []byte, dst any) error {
 		return fmt.Errorf("%s is greater than maximum value for uint", n.String())
 	}
 	*p = uint(n.AsUint64())
+
+	return nil
+}
+
+type scanPlanBinaryInt16ToInt8 struct{}
+
+func (scanPlanBinaryInt16ToInt8) Scan(src []byte, dst any) error {
+	if src == nil {
+		return fmt.Errorf("cannot scan NULL into %T", dst)
+	}
+
+	if len(src) != 16 {
+		return fmt.Errorf("invalid length for Int16: %v", len(src))
+	}
+
+	p, ok := (dst).(*int8)
+	if !ok {
+		return ErrScanTargetTypeChanged
+	}
+
+	n := pgio.ReadInt128(src)
+	if n.Cmp64(int64(math.MinInt8)) < 0 {
+		return fmt.Errorf("%s is less than minimum value for int8", n.String())
+	}
+	if n.Cmp(s8MaxInS128) > 0 {
+		return fmt.Errorf("%s is greater than maximum value for int8", n.String())
+	}
+	*p = int8(n.AsInt64())
 
 	return nil
 }
@@ -681,6 +745,27 @@ func (scanPlanBinaryInt16ToUint64Scanner) Scan(src []byte, dst any) error {
 	return s.ScanUint64(UInt8{Uint64: n.AsUint64(), Valid: true})
 }
 
+type scanPlanTextInt16ToUint8 struct{}
+
+func (scanPlanTextInt16ToUint8) Scan(src []byte, dst any) error {
+	if src == nil {
+		return fmt.Errorf("cannot scan NULL into %T", dst)
+	}
+
+	p, ok := (dst).(*uint8)
+	if !ok {
+		return ErrScanTargetTypeChanged
+	}
+
+	n, err := strconv.ParseUint(string(src), 10, 8)
+	if err != nil {
+		return err
+	}
+
+	*p = uint8(n)
+	return nil
+}
+
 type scanPlanTextInt16ToUint16 struct{}
 
 func (scanPlanTextInt16ToUint16) Scan(src []byte, dst any) error {
@@ -783,6 +868,27 @@ func (scanPlanTextInt16ToUint) Scan(src []byte, dst any) error {
 	}
 
 	*p = uint(n)
+	return nil
+}
+
+type scanPlanTextInt16ToInt8 struct{}
+
+func (scanPlanTextInt16ToInt8) Scan(src []byte, dst any) error {
+	if src == nil {
+		return fmt.Errorf("cannot scan NULL into %T", dst)
+	}
+
+	p, ok := (dst).(*int8)
+	if !ok {
+		return ErrScanTargetTypeChanged
+	}
+
+	n, err := strconv.ParseInt(string(src), 10, 8)
+	if err != nil {
+		return err
+	}
+
+	*p = int8(n)
 	return nil
 }
 

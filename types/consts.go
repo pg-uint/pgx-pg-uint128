@@ -52,10 +52,12 @@ var (
 )
 
 const (
+	Uint1TypName  = "uint1"
 	Uint2TypName  = "uint2"
 	Uint4TypName  = "uint4"
 	Uint8TypName  = "uint8"
 	Uint16TypName = "uint16"
 
+	Int1TypName  = "int1"
 	Int16TypName = "int16"
 )

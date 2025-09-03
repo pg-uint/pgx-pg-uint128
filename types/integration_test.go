@@ -38,6 +38,80 @@ func isExpectedEq(a any) func(any) bool {
 	}
 }
 
+func TestUInt1_Integration(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	pgxtest.RunValueRoundTripTests(context.Background(), t, defaultConnTestRunner, nil, "uint1", []pgxtest.ValueRoundTripTest{
+		{int8(1), new(uint8), isExpectedEq(uint8(1))},
+		{int16(1), new(uint8), isExpectedEq(uint8(1))},
+		{int32(1), new(uint8), isExpectedEq(uint8(1))},
+		{int64(1), new(uint8), isExpectedEq(uint8(1))},
+		{uint8(1), new(uint8), isExpectedEq(uint8(1))},
+		{uint16(1), new(uint8), isExpectedEq(uint8(1))},
+		{uint32(1), new(uint8), isExpectedEq(uint8(1))},
+		{uint64(1), new(uint8), isExpectedEq(uint8(1))},
+		{int(1), new(uint8), isExpectedEq(uint8(1))},
+		{uint(1), new(uint8), isExpectedEq(uint8(1))},
+		{pgtype.Int2{Int16: 1, Valid: true}, new(uint8), isExpectedEq(uint8(1))},
+		{UInt1{Uint8: 1, Valid: true}, new(uint8), isExpectedEq(uint8(1))},
+		{int32(1), new(UInt1), isExpectedEq(UInt1{Uint8: 1, Valid: true})},
+		{1, new(UInt1), isExpectedEq(UInt1{Uint8: 1, Valid: true})},
+		{"1", new(string), isExpectedEq("1")},
+		{UInt1{}, new(UInt1), isExpectedEq(UInt1{})},
+		{nil, new(*uint8), isExpectedEq((*uint8)(nil))},
+
+		// Signed types target
+		{uint16(1), new(int8), isExpectedEq(int8(1))},
+		{uint16(1), new(int16), isExpectedEq(int16(1))},
+		{uint16(1), new(int32), isExpectedEq(int32(1))},
+		{uint16(1), new(int64), isExpectedEq(int64(1))},
+		{uint16(1), new(int), isExpectedEq(int(1))},
+
+		// Unsigned types target
+		{uint8(1), new(uint8), isExpectedEq(uint8(1))},
+		{uint8(1), new(uint16), isExpectedEq(uint16(1))},
+		{uint8(1), new(uint32), isExpectedEq(uint32(1))},
+		{uint8(1), new(uint64), isExpectedEq(uint64(1))},
+		{uint8(1), new(uint), isExpectedEq(uint(1))},
+		{uint8(1), new(uint128.Uint128), isExpectedEq(uint128.From64(1))},
+		//{uint16(1), new(UInt2), isExpectedEq(UInt2{Uint16: 1, Valid: true})},
+		//{uint16(1), new(UInt4), isExpectedEq(UInt4{Uint32: 1, Valid: true})},
+		//{uint16(1), new(UInt8), isExpectedEq(UInt8{Uint64: 1, Valid: true})},
+		//{uint16(1), new(UInt16), isExpectedEq(UInt16{Uint128: uint128.From64(1), Valid: true})},
+	})
+
+	pgxtest.RunWithQueryExecModes(ctx, t, defaultConnTestRunner, pgxtest.AllQueryExecModes, func(ctx context.Context, t testing.TB, conn *pgx.Conn) {
+		var h *uint8
+		var expectedNil *uint8
+		var expectedEmpty uint8
+		var expectedMax uint8 = math.MaxUint8
+
+		err := conn.QueryRow(ctx, `select cast(null as uint1)`).Scan(&h)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		require.Equalf(t, expectedNil, h, "plain conn.Scan failed expectedNil=%#v actual=%#v", expectedNil, h)
+
+		err = conn.QueryRow(ctx, `select cast(0 as uint1)`).Scan(&h)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		require.NotNil(t, h)
+		require.Equalf(t, expectedEmpty, *h, "plain conn.Scan failed expectedEmpty=%#v actual=%#v\", expectedEmpty, h", expectedEmpty, h)
+
+		err = conn.QueryRow(ctx, `select 255::uint1`).Scan(&h)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		require.NotNil(t, h)
+		require.Equalf(t, expectedMax, *h, "plain conn.Scan failed expectedMax=%#v actual=%#v\", expectedMax, h", expectedMax, h)
+	})
+}
+
 func TestUInt2_Integration(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
@@ -315,6 +389,80 @@ func TestUInt16_Integration(t *testing.T) {
 		require.Equalf(t, expectedEmpty, *h, "plain conn.Scan failed expectedEmpty=%#v actual=%#v\", expectedEmpty, h", expectedEmpty, h)
 
 		err = conn.QueryRow(ctx, `select 340282366920938463463374607431768211455::uint16`).Scan(&h)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		require.NotNil(t, h)
+		require.Equalf(t, expectedMax, *h, "plain conn.Scan failed expectedMax=%#v actual=%#v\", expectedMax, h", expectedMax, h)
+	})
+}
+
+func TestInt1_Integration(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	pgxtest.RunValueRoundTripTests(context.Background(), t, defaultConnTestRunner, nil, "int1", []pgxtest.ValueRoundTripTest{
+		{int8(1), new(int8), isExpectedEq(int8(1))},
+		{int16(1), new(int8), isExpectedEq(int8(1))},
+		{int32(1), new(int8), isExpectedEq(int8(1))},
+		{int64(1), new(int8), isExpectedEq(int8(1))},
+		{uint8(1), new(int8), isExpectedEq(int8(1))},
+		{uint16(1), new(int8), isExpectedEq(int8(1))},
+		{uint32(1), new(int8), isExpectedEq(int8(1))},
+		{uint64(1), new(int8), isExpectedEq(int8(1))},
+		{int(1), new(int8), isExpectedEq(int8(1))},
+		{uint(1), new(int8), isExpectedEq(int8(1))},
+		{pgtype.Int2{Int16: 1, Valid: true}, new(int8), isExpectedEq(int8(1))},
+		{Int1{Int8: 1, Valid: true}, new(int8), isExpectedEq(int8(1))},
+		{int32(1), new(Int1), isExpectedEq(Int1{Int8: 1, Valid: true})},
+		{1, new(Int1), isExpectedEq(Int1{Int8: 1, Valid: true})},
+		{"1", new(string), isExpectedEq("1")},
+		{Int1{}, new(Int1), isExpectedEq(Int1{})},
+		{nil, new(*int8), isExpectedEq((*int8)(nil))},
+
+		// Signed types target
+		{uint16(1), new(int8), isExpectedEq(int8(1))},
+		{uint16(1), new(int16), isExpectedEq(int16(1))},
+		{uint16(1), new(int32), isExpectedEq(int32(1))},
+		{uint16(1), new(int64), isExpectedEq(int64(1))},
+		{uint16(1), new(int), isExpectedEq(int(1))},
+
+		// Unsigned types target
+		{uint8(1), new(uint8), isExpectedEq(uint8(1))},
+		{uint8(1), new(uint16), isExpectedEq(uint16(1))},
+		{uint8(1), new(uint32), isExpectedEq(uint32(1))},
+		{uint8(1), new(uint64), isExpectedEq(uint64(1))},
+		{uint8(1), new(uint), isExpectedEq(uint(1))},
+		{uint8(1), new(uint128.Uint128), isExpectedEq(uint128.From64(1))},
+		//{uint16(1), new(UInt2), isExpectedEq(UInt2{Uint16: 1, Valid: true})},
+		//{uint16(1), new(UInt4), isExpectedEq(UInt4{Uint32: 1, Valid: true})},
+		//{uint16(1), new(UInt8), isExpectedEq(UInt8{Uint64: 1, Valid: true})},
+		//{uint16(1), new(UInt16), isExpectedEq(UInt16{Uint128: uint128.From64(1), Valid: true})},
+	})
+
+	pgxtest.RunWithQueryExecModes(ctx, t, defaultConnTestRunner, pgxtest.AllQueryExecModes, func(ctx context.Context, t testing.TB, conn *pgx.Conn) {
+		var h *uint8
+		var expectedNil *uint8
+		var expectedEmpty uint8
+		var expectedMax uint8 = math.MaxInt8
+
+		err := conn.QueryRow(ctx, `select cast(null as int1)`).Scan(&h)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		require.Equalf(t, expectedNil, h, "plain conn.Scan failed expectedNil=%#v actual=%#v", expectedNil, h)
+
+		err = conn.QueryRow(ctx, `select cast(0 as int1)`).Scan(&h)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		require.NotNil(t, h)
+		require.Equalf(t, expectedEmpty, *h, "plain conn.Scan failed expectedEmpty=%#v actual=%#v\", expectedEmpty, h", expectedEmpty, h)
+
+		err = conn.QueryRow(ctx, `select 127::int1`).Scan(&h)
 		if err != nil {
 			t.Fatal(err)
 		}

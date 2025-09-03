@@ -17,6 +17,26 @@ func isExpectedEq(a any) func(any) bool {
 	}
 }
 
+func TestUInt1Transcode(t *testing.T) {
+	pgxtest.RunValueRoundTripTests(context.Background(), t, defaultConnTestRunner, nil, "uint1", []pgxtest.ValueRoundTripTest{
+		{
+			(zeronull.UInt1)(1),
+			new(zeronull.UInt1),
+			isExpectedEq((zeronull.UInt1)(1)),
+		},
+		{
+			nil,
+			new(zeronull.UInt1),
+			isExpectedEq((zeronull.UInt1)(0)),
+		},
+		{
+			(zeronull.UInt1)(0),
+			new(any),
+			isExpectedEq(nil),
+		},
+	})
+}
+
 func TestUInt2Transcode(t *testing.T) {
 	pgxtest.RunValueRoundTripTests(context.Background(), t, defaultConnTestRunner, nil, "uint2", []pgxtest.ValueRoundTripTest{
 		{
@@ -91,6 +111,26 @@ func TestUInt16Transcode(t *testing.T) {
 		},
 		{
 			zeronull.UInt16{},
+			new(any),
+			isExpectedEq(nil),
+		},
+	})
+}
+
+func TestInt1Transcode(t *testing.T) {
+	pgxtest.RunValueRoundTripTests(context.Background(), t, defaultConnTestRunner, nil, "int1", []pgxtest.ValueRoundTripTest{
+		{
+			(zeronull.Int1)(1),
+			new(zeronull.Int1),
+			isExpectedEq((zeronull.Int1)(1)),
+		},
+		{
+			nil,
+			new(zeronull.Int1),
+			isExpectedEq((zeronull.Int1)(0)),
+		},
+		{
+			(zeronull.Int1)(0),
 			new(any),
 			isExpectedEq(nil),
 		},

@@ -55,7 +55,7 @@ class Type
             return "pgio.ReadUint{$this->bitSize}";
         }
 
-        throw new InvalidArgumentException("signed types is not supported");
+        return "pgio.ReadInt{$this->bitSize}";
     }
 
     public function getPGIoWriteFuncName(): string
@@ -64,7 +64,7 @@ class Type
             return "pgio.AppendUint{$this->bitSize}";
         }
 
-        throw new InvalidArgumentException("signed types is not supported");
+        return "pgio.AppendInt{$this->bitSize}";
     }
 
     public function getParseIntFunctionName(): string
@@ -200,11 +200,12 @@ class Type
 
     public function canOverflow(Type $type): bool
     {
-        if ($this->isUnsigned && $type === UINT) {
-            return $this->canOverflow(UINT64);
+        // Treat machine depended types as lowest possible precision (32 bits)
+        if ($type === UINT) {
+            return $this->canOverflow(UINT32);
         }
-        if ($this->isUnsigned && $type === INT) {
-            return $this->canOverflow(INT64);
+        if ($type === INT) {
+            return $this->canOverflow(INT32);
         }
 
         // Unsigned types can overflow signed types only when precA >= precB
@@ -220,6 +221,14 @@ class Type
 
     public function canUnderflow(Type $type): bool
     {
+        // Treat machine depended types as lowest possible precision (32 bits)
+        if ($type === UINT) {
+            return $this->canUnderflow(UINT32);
+        }
+        if ($type === INT) {
+            return $this->canUnderflow(INT32);
+        }
+
         // Min val for unsigned types is 0, so no underflow is possible
         if ($this->isUnsigned && $type->isUnsigned) {
             return false;
@@ -237,24 +246,6 @@ class Type
 
         // Signed type can underflow another signed type only when precA > precB
         return $this->bitSize > $type->bitSize;
-    }
-
-    public function canOverflowMachineDependedType(Type $type): bool
-    {
-        // UINT can be overflowed only when both signed/unsigned bit size is larger than 32 bit
-        if ($type === UINT) {
-            return $this->bitSize > 32;
-        }
-        if ($type === INT) {
-            // Unsigned can overflow signed even with the same bit size
-            if ($this->isUnsigned) {
-                return $this->bitSize >= 32;
-            }
-
-            return $this->bitSize > 32;
-        }
-
-        throw new InvalidArgumentException("Cannot check for not machine depended types");
     }
 
     public function getGoPackage(): string
@@ -316,6 +307,7 @@ function getMaxValNoOverflowForType(Type $src, Type $dst): string
         if ($src->bitSize < $dst->bitSize) {
             // Choose corresponding datatype
             $cutType = match ($src->bitSize) {
+                8 => UINT8,
                 16 => UINT16,
                 32 => UINT32,
                 64 => UINT64,
@@ -342,10 +334,11 @@ function getMaxValNoOverflowForType(Type $src, Type $dst): string
         if ($src->bitSize < $dst->bitSize) {
             // Choose corresponding datatype
             $cutType = match ($src->bitSize) {
-                16 => UINT16,
-                32 => UINT32,
-                64 => UINT64,
-                128 => UINT128,
+                8 => INT8,
+                16 => INT16,
+                32 => INT32,
+                64 => INT64,
+                128 => INT128,
             };
 
             return $cutType->maxVal;
@@ -399,6 +392,7 @@ function getMaxValBytesNoOverflowForType(Type $src, Type $dst): string
         if ($src->bitSize < $dst->bitSize) {
             // Choose corresponding datatype
             $cutType = match ($src->bitSize) {
+                8 => UINT8,
                 16 => UINT16,
                 32 => UINT32,
                 64 => UINT64,
@@ -424,6 +418,7 @@ function getMaxValBytesNoOverflowForType(Type $src, Type $dst): string
         if ($src->bitSize < $dst->bitSize) {
             // Choose corresponding datatype
             $cutType = match ($src->bitSize) {
+                8 => INT8,
                 16 => INT16,
                 32 => INT32,
                 64 => INT64,

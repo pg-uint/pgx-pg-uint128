@@ -274,6 +274,8 @@ func (UInt2Codec) PlanScan(m *Map, oid uint32, format int16, target any) ScanPla
 	switch format {
 	case BinaryFormatCode:
 		switch target.(type) {
+		case *uint8:
+			return scanPlanBinaryUInt2ToUint8{}
 		case *uint16:
 			return scanPlanBinaryUInt2ToUint16{}
 		case *uint32:
@@ -284,6 +286,8 @@ func (UInt2Codec) PlanScan(m *Map, oid uint32, format int16, target any) ScanPla
 			return scanPlanBinaryUInt2ToUint128{}
 		case *uint:
 			return scanPlanBinaryUInt2ToUint{}
+		case *int8:
+			return scanPlanBinaryUInt2ToInt8{}
 		case *int16:
 			return scanPlanBinaryUInt2ToInt16{}
 		case *int32:
@@ -303,6 +307,8 @@ func (UInt2Codec) PlanScan(m *Map, oid uint32, format int16, target any) ScanPla
 		}
 	case TextFormatCode:
 		switch target.(type) {
+		case *uint8:
+			return scanPlanTextUInt2ToUint8{}
 		case *uint16:
 			return scanPlanTextUInt2ToUint16{}
 		case *uint32:
@@ -313,6 +319,8 @@ func (UInt2Codec) PlanScan(m *Map, oid uint32, format int16, target any) ScanPla
 			return scanPlanTextUInt2ToUint128{}
 		case *uint:
 			return scanPlanTextUInt2ToUint{}
+		case *int8:
+			return scanPlanTextUInt2ToInt8{}
 		case *int16:
 			return scanPlanTextUInt2ToInt16{}
 		case *int32:
@@ -357,6 +365,31 @@ func (c UInt2Codec) DecodeValue(m *Map, oid uint32, format int16, src []byte) (a
 		return nil, err
 	}
 	return n, nil
+}
+
+type scanPlanBinaryUInt2ToUint8 struct{}
+
+func (scanPlanBinaryUInt2ToUint8) Scan(src []byte, dst any) error {
+	if src == nil {
+		return fmt.Errorf("cannot scan NULL into %T", dst)
+	}
+
+	if len(src) != 2 {
+		return fmt.Errorf("invalid length for UInt2: %v", len(src))
+	}
+
+	p, ok := (dst).(*uint8)
+	if !ok {
+		return ErrScanTargetTypeChanged
+	}
+
+	n := pgio.ReadUint16(src)
+	if n > uint16(math.MaxUint8) {
+		return fmt.Errorf("%d is greater than maximum value for uint8", n)
+	}
+	*p = uint8(n)
+
+	return nil
 }
 
 type scanPlanBinaryUInt2ToUint16 struct{}
@@ -470,6 +503,31 @@ func (scanPlanBinaryUInt2ToUint) Scan(src []byte, dst any) error {
 	n := pgio.ReadUint16(src)
 
 	*p = uint(n)
+
+	return nil
+}
+
+type scanPlanBinaryUInt2ToInt8 struct{}
+
+func (scanPlanBinaryUInt2ToInt8) Scan(src []byte, dst any) error {
+	if src == nil {
+		return fmt.Errorf("cannot scan NULL into %T", dst)
+	}
+
+	if len(src) != 2 {
+		return fmt.Errorf("invalid length for UInt2: %v", len(src))
+	}
+
+	p, ok := (dst).(*int8)
+	if !ok {
+		return ErrScanTargetTypeChanged
+	}
+
+	n := pgio.ReadUint16(src)
+	if n > uint16(math.MaxInt8) {
+		return fmt.Errorf("%d is greater than maximum value for int8", n)
+	}
+	*p = int8(n)
 
 	return nil
 }
@@ -629,9 +687,6 @@ func (scanPlanBinaryUInt2ToInt64Scanner) Scan(src []byte, dst any) error {
 	}
 
 	n := uint64(pgio.ReadUint16(src))
-	if n > math.MaxInt64 {
-		return fmt.Errorf("UInt2 value %d is greater than max value for Int8", n)
-	}
 
 	return s.ScanInt64(Int8{Int64: int64(n), Valid: true})
 }
@@ -655,6 +710,27 @@ func (scanPlanBinaryUInt2ToUint64Scanner) Scan(src []byte, dst any) error {
 	n := uint64(pgio.ReadUint16(src))
 
 	return s.ScanUint64(UInt8{Uint64: n, Valid: true})
+}
+
+type scanPlanTextUInt2ToUint8 struct{}
+
+func (scanPlanTextUInt2ToUint8) Scan(src []byte, dst any) error {
+	if src == nil {
+		return fmt.Errorf("cannot scan NULL into %T", dst)
+	}
+
+	p, ok := (dst).(*uint8)
+	if !ok {
+		return ErrScanTargetTypeChanged
+	}
+
+	n, err := strconv.ParseUint(string(src), 10, 8)
+	if err != nil {
+		return err
+	}
+
+	*p = uint8(n)
+	return nil
 }
 
 type scanPlanTextUInt2ToUint16 struct{}
@@ -759,6 +835,27 @@ func (scanPlanTextUInt2ToUint) Scan(src []byte, dst any) error {
 	}
 
 	*p = uint(n)
+	return nil
+}
+
+type scanPlanTextUInt2ToInt8 struct{}
+
+func (scanPlanTextUInt2ToInt8) Scan(src []byte, dst any) error {
+	if src == nil {
+		return fmt.Errorf("cannot scan NULL into %T", dst)
+	}
+
+	p, ok := (dst).(*int8)
+	if !ok {
+		return ErrScanTargetTypeChanged
+	}
+
+	n, err := strconv.ParseInt(string(src), 10, 8)
+	if err != nil {
+		return err
+	}
+
+	*p = int8(n)
 	return nil
 }
 

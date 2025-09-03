@@ -15,7 +15,6 @@ const UINT8 = new Type(
     minValConst: '0',
     maxVal: '255',
     oid: 0,
-
 );
 
 const UINT16 = new Type(
@@ -187,11 +186,13 @@ const UINT64_SCANNER = new Type(
 );
 
 const SCAN_TYPES = [
+    UINT8,
     UINT16,
     UINT32,
     UINT64,
     UINT128,
     UINT,
+    INT8,
     INT16,
     INT32,
     INT64,
@@ -203,10 +204,12 @@ const SCAN_TYPES = [
  * @var array<TypeConfig>
  */
 const CONFIGURED_TYPES = [
+    new TypeConfig(type: UINT8, scanTypes: SCAN_TYPES),
     new TypeConfig(type: UINT16, scanTypes: SCAN_TYPES),
     new TypeConfig(type: UINT32, scanTypes: SCAN_TYPES),
     new TypeConfig(type: UINT64, scanTypes: SCAN_TYPES),
     new TypeConfig(type: UINT128, scanTypes: SCAN_TYPES),
 
+    new TypeConfig(type: INT8, scanTypes: SCAN_TYPES),
     new TypeConfig(type: INT128, scanTypes: SCAN_TYPES)
 ];

@@ -8,9 +8,9 @@ require_once __DIR__ . '/types.php';
 function genType(TypeConfig $typeConfig): string
 {
     $type = $typeConfig->type;
-    if (!$type->isUnsigned) {
-        throw new InvalidArgumentException("Only unsigned types supported");
-    }
+//    if (!$type->isUnsigned) {
+//        throw new InvalidArgumentException("Only unsigned types supported");
+//    }
 
     $structProp = $type->getStructPropName();
 
@@ -48,6 +48,8 @@ GO;
 GO;
 
     }
+
+    $uint64Case = $type->isUnsigned ? 'n = src' : 'n = int64(src)';
 
     $buf = <<<GO
 type $type->name struct {
@@ -104,7 +106,7 @@ func (dst *{$type->name}) Scan(src any) error {
 
 		n = $wideFmtType(src)
     case uint64:
-        n = src
+        $uint64Case
 	case string:
 		var err error
 		n, err = {$type->getParseIntFunctionCall("src")}
@@ -139,7 +141,7 @@ func (src {$type->name}) MarshalJSON() ([]byte, error) {
 	if !src.Valid {
 		return []byte("null"), nil
 	}
-	return []byte(strconv.FormatUint($wideFmtType(src.{$structProp}), 10)), nil
+	return []byte({$type->getFormatIntFunctionName()}($wideFmtType(src.{$structProp}), 10)), nil
 }
 
 func (dst *{$type->name}) UnmarshalJSON(b []byte) error {
@@ -703,7 +705,7 @@ function genTypeUInt64ValueFunc(Type $type): string
 {
     $structProp = $type->getStructPropName();
 
-    $canOverflow = $type->canUnderflow(UINT64);
+    $canOverflow = $type->canOverflow(UINT64);
     $canUnderflow = $type->canUnderflow(UINT64);
 
     $funcDef = "func (n {$type->name}) Uint64Value() (UInt8, error) {\n";
@@ -816,6 +818,7 @@ GO;
         $retVal = match ($type) {
             INT128 => "return append(buf, $fmtInt64Func...), nil",
             UINT128 => "return append(buf, $fmtUint64Func...), nil",
+            INT8 => "return append(buf, {$type->getFormatIntFunctionCall("n.Int64")}...), nil",
             default => "return append(buf, {$type->getFormatIntFunctionCall("uint64(n.Int64)")}...), nil"
         };
     }
@@ -888,6 +891,7 @@ GO;
         $retVal = match ($type) {
             UINT128 => "return append(buf, $uint64FmtFunc...), nil",
             INT128 => "return append(buf, $int64FmtFunc...), nil",
+            INT8 => "return append(buf, {$type->getFormatIntFunctionCall("int64(n.Uint64)")}...), nil",
 
             default => "return append(buf, {$type->getFormatIntFunctionCall("uint64(n.Uint64)")}...), nil",
         };
@@ -920,7 +924,11 @@ function genCodecTextEncode(Type $type): string
 {
     $encodeName = $type->getTextEncodeCodecName();
 
-    $fmtFunc = $type->getFormatIntFunctionCall("uint64(n)");
+    if ($type->isUnsigned) {
+        $fmtFunc = $type->getFormatIntFunctionCall("uint64(n)");
+    } else {
+        $fmtFunc = $type->getFormatIntFunctionCall("int64(n)");
+    }
 
     if ($type === UINT128 || $type === INT128) {
         $fmtFunc = $type->getFormatIntFunctionCall("n");
@@ -958,11 +966,6 @@ function genCodecBinaryScanTo(Type $type, Type $to): string
     $maxCheck = '';
     $canUnderflow = $type->canUnderflow($to);
     $canOverflow = $type->canOverflow($to);
-
-    // Treat machine dependence UINT/INT sized integers as potential overflow
-    if ($to === UINT || $to === INT) {
-        $canOverflow = $type->canOverflowMachineDependedType($to);
-    }
 
     if ($canUnderflow) {
         if ($type === INT128) {
@@ -1141,11 +1144,20 @@ function genCodecBinaryScanToInt64Scanner(Type $type): string
 
     $to = INT64_SCANNER;
 
-    $ending = <<<GO
-	n := $wideType({$type->getPGIoReadFuncName()}(src))
+    $overflowCheck = <<<GO
 	if n > $maxConst {
 	    return fmt.Errorf("$type->name value %d is greater than max value for Int8", n)
 	}
+GO;
+
+    if (!$type->canOverflow(INT64)) {
+        $overflowCheck = '';
+    }
+
+
+    $ending = <<<GO
+	n := $wideType({$type->getPGIoReadFuncName()}(src))
+{$overflowCheck}
 
 	return s.ScanInt64(Int8{Int64: int64(n), Valid: true})
 GO;
@@ -1207,6 +1219,14 @@ function genCodecBinaryScanToUInt64Scanner(Type $type): string
 
 	return s.ScanUint64(UInt8{Uint64: n, Valid: true})
 GO;
+
+    if ($type === INT8) {
+        $ending = <<<GO
+	n := $wideType({$type->getPGIoReadFuncName()}(src))
+
+	return s.ScanUint64(UInt8{Uint64: uint64(n), Valid: true})
+GO;
+    }
 
     if ($type === UINT128) {
         $ending = <<<GO
@@ -1488,11 +1508,11 @@ function genTypeScanTest(TypeConfig $typeConfig, Type $scanType, bool $isBinary)
     $fn = <<<GO
 func Test{$type->name}{$testFnPrefix}_Scan$scanTypName(t *testing.T) {
     var dst {$scanType->getFullGoTypeName()}
-    
+
     assert.NoError(t,
 		typeMap.Scan({$type->name}OID, $format, []byte("$maxBin"), &dst),
 	)
-	
+
 	assert.Equal(t, $maxValue, dst)
 GO;
 
@@ -1550,7 +1570,35 @@ GO;
 
         $maxBin = $isBinary ? $type->getMaxValBytes() : $type->getMaxVal();
 
-        $test .= <<<GO
+
+        if ($typeConfig->type->isUnsigned && $typeConfig->type->bitSize === 32 && $scanType === INT) {
+                $test .= <<<GO
+func Test{$type->name}{$testFnPrefix}_Scan{$scanTypName}_Overflow(t *testing.T) {
+	var dst {$scanType->getFullGoTypeName()}
+
+	if intSize == 32 {
+		assert.ErrorContains(t,
+			typeMap.Scan({$type->name}OID, $format, []byte("$maxBin"), &dst),
+			`$errMsg`,
+		)
+	}
+}
+GO;
+        } else if ($typeConfig->type->isUnsigned && $typeConfig->type->bitSize === 64 && $scanType === UINT) {
+            $test .= <<<GO
+func Test{$type->name}{$testFnPrefix}_Scan{$scanTypName}_Overflow(t *testing.T) {
+	var dst {$scanType->getFullGoTypeName()}
+
+	if intSize == 32 {
+		assert.ErrorContains(t,
+			typeMap.Scan({$type->name}OID, $format, []byte("$maxBin"), &dst),
+			`$errMsg`,
+		)
+	}
+}
+GO;
+        } else {
+            $test .= <<<GO
 func Test{$type->name}{$testFnPrefix}_Scan{$scanTypName}_Overflow(t *testing.T) {
 	var dst {$scanType->getFullGoTypeName()}
 
@@ -1560,6 +1608,7 @@ func Test{$type->name}{$testFnPrefix}_Scan{$scanTypName}_Overflow(t *testing.T) 
 	)
 }
 GO;
+        }
 
         $test .= "\n";
     }

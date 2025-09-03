@@ -12,11 +12,13 @@ task:
           - GOVERSION: 1.21
           - GOVERSION: 1.22
           - GOVERSION: 1.23
+          - GOVERSION: 1.24
+          - GOVERSION: 1.25
       container:
         image: golang:$GOVERSION
         additional_containers:
           - name: pg
-            image: codercms/postgres-uint128:15-1.0.0
+            image: codercms/postgres-uint128:17-1.1.0
             port: 5432
             env:
               POSTGRES_PASSWORD: secret

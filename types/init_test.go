@@ -13,12 +13,18 @@ var typeMap = pgtype.NewMap()
 
 const intSize = 32 << (^uint(0) >> 63)
 
+const UInt1OID = 787897
 const UInt2OID = 787898
 const UInt4OID = 787899
 const UInt8OID = 787900
 const UInt16OID = 787901
 
 const Int16OID = 787902
+const Int1OID = 787903
+
+func registerTestUint1(tMap *pgtype.Map) {
+	tMap.RegisterType(&pgtype.Type{Name: "uint1", OID: UInt1OID, Codec: UInt1Codec{}})
+}
 
 func registerTestUint2(tMap *pgtype.Map) {
 	tMap.RegisterType(&pgtype.Type{Name: "uint2", OID: UInt2OID, Codec: UInt2Codec{}})
@@ -36,16 +42,22 @@ func registerTestUint16(tMap *pgtype.Map) {
 	tMap.RegisterType(&pgtype.Type{Name: "uint16", OID: UInt16OID, Codec: UInt16Codec{}})
 }
 
+func registerTestInt1(tMap *pgtype.Map) {
+	tMap.RegisterType(&pgtype.Type{Name: "int1", OID: Int1OID, Codec: Int1Codec{}})
+}
+
 func registerTestInt16(tMap *pgtype.Map) {
 	tMap.RegisterType(&pgtype.Type{Name: "int16", OID: Int16OID, Codec: Int16Codec{}})
 }
 
 func registerTestTypes(tMap *pgtype.Map) {
+	registerTestUint1(tMap)
 	registerTestUint2(tMap)
 	registerTestUint4(tMap)
 	registerTestUint8(tMap)
 	registerTestUint16(tMap)
 
+	registerTestInt1(tMap)
 	registerTestInt16(tMap)
 }
 
