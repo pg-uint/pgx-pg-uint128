@@ -104,11 +104,14 @@ func main() {
 func testConn(conn *pgx.Conn) {
 	rows, err := conn.Query(
 		context.Background(),
-		"SELECT $1::uint2, $2::uint4, $3::uint8, $4::uint16, $5::int16, $6::int16",
+		"SELECT $1::uint1, $2::uint2, $3::uint4, $4::uint8, $5::uint16, $6::int1, $7::int1, $8::int16, $9::int16",
+		uint8(math.MaxUint8),
 		uint16(math.MaxUint16),
 		uint32(math.MaxUint32),
 		uint64(math.MaxUint64),
 		uint128.Max,
+		int8(math.MaxInt8),
+		int8(math.MinInt8),
 		num.MaxI128,
 		num.MinI128,
 	)
@@ -119,34 +122,42 @@ func testConn(conn *pgx.Conn) {
 	defer rows.Close()
 
 	for rows.Next() {
+		var num8 uint8
 		var num16 uint16
 		var num32 uint32
 		var num64 uint64
 		var num128 uint128.Uint128
+		var num8sMax int8
+		var num8sMin int8
 		var num128sMax num.I128
 		var num128sMin num.I128
 
-		if err := rows.Scan(&num16, &num32, &num64, &num128, &num128sMax, &num128sMin); err != nil {
+		if err := rows.Scan(&num8, &num16, &num32, &num64, &num128, &num8sMax, &num8sMin, &num128sMax, &num128sMin); err != nil {
 			log.Fatalf("Cannot scan row: %v", err)
 		}
 
-		log.Printf("PID=%d Got u16 %d, u32 %d, u64 %d, u128 %s", conn.PgConn().PID(), num16, num32, num64, num128.String())
+		log.Printf("PID=%d Got u8 %d, u16 %d, u32 %d, u64 %d, u128 %s", conn.PgConn().PID(), num8, num16, num32, num64, num128.String())
+		log.Printf("PID=%d Got s8 max: %d, s8 min: %d", conn.PgConn().PID(), num8sMax, num8sMin)
 		log.Printf("PID=%d Got s128 max: %s, s128 min: %s", conn.PgConn().PID(), num128sMax.String(), num128sMin.String())
 	}
 }
 
 // Correct output should look like this (order of output can be randomized a bit because of parallelism):
 //
-// Types cache created by conn pid=25380
-// Types registered from cache to conn pid=25380
-// Types registered from cache to conn pid=24048
-// Types registered from cache to conn pid=22676
-// Types registered from cache to conn pid=26020
-// PID=26020 Got u16 65535, u32 4294967295, u64 18446744073709551615, u128 340282366920938463463374607431768211455
-// PID=26020 Got s128 max: 170141183460469231731687303715884105727, s128 min: -170141183460469231731687303715884105728
-// PID=25380 Got u16 65535, u32 4294967295, u64 18446744073709551615, u128 340282366920938463463374607431768211455
-// PID=24048 Got u16 65535, u32 4294967295, u64 18446744073709551615, u128 340282366920938463463374607431768211455
-// PID=24048 Got s128 max: 170141183460469231731687303715884105727, s128 min: -170141183460469231731687303715884105728
-// PID=22676 Got u16 65535, u32 4294967295, u64 18446744073709551615, u128 340282366920938463463374607431768211455
-// PID=22676 Got s128 max: 170141183460469231731687303715884105727, s128 min: -170141183460469231731687303715884105728
-// PID=25380 Got s128 max: 170141183460469231731687303715884105727, s128 min: -170141183460469231731687303715884105728
+// Types cache created by conn pid=45733
+// Types registered from cache to conn pid=45733
+// Types registered from cache to conn pid=45734
+// Types registered from cache to conn pid=45732
+// Types registered from cache to conn pid=45731
+// PID=45731 Got u8 255, u16 65535, u32 4294967295, u64 18446744073709551615, u128 340282366920938463463374607431768211455
+// PID=45731 Got s8 max: 127, s8 min: -128
+// PID=45731 Got s128 max: 170141183460469231731687303715884105727, s128 min: -170141183460469231731687303715884105728
+// PID=45733 Got u8 255, u16 65535, u32 4294967295, u64 18446744073709551615, u128 340282366920938463463374607431768211455
+// PID=45733 Got s8 max: 127, s8 min: -128
+// PID=45733 Got s128 max: 170141183460469231731687303715884105727, s128 min: -170141183460469231731687303715884105728
+// PID=45732 Got u8 255, u16 65535, u32 4294967295, u64 18446744073709551615, u128 340282366920938463463374607431768211455
+// PID=45732 Got s8 max: 127, s8 min: -128
+// PID=45732 Got s128 max: 170141183460469231731687303715884105727, s128 min: -170141183460469231731687303715884105728
+// PID=45734 Got u8 255, u16 65535, u32 4294967295, u64 18446744073709551615, u128 340282366920938463463374607431768211455
+// PID=45734 Got s8 max: 127, s8 min: -128
+// PID=45734 Got s128 max: 170141183460469231731687303715884105727, s128 min: -170141183460469231731687303715884105728
