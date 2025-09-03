@@ -2,10 +2,11 @@ package main
 
 import (
 	"context"
-	"github.com/jackc/pgx/v5"
 	"log"
 	"math"
 	"os"
+
+	"github.com/jackc/pgx/v5"
 
 	"go.shabbyrobe.org/num"
 	"lukechampine.com/uint128"
