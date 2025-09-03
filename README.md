@@ -12,11 +12,13 @@ the Go [pgx](https://github.com/jackc/pgx) driver.
 ## Features
 
 - **New Datatypes for pgx**:
+    - `uint1` (maps to Go's `uint8`)
     - `uint2` (maps to Go's `uint16`)
     - `uint4` (maps to Go's `uint32`)
     - `uint8` (maps to Go's `uint64`)
     - `uint16` (maps to `uint128` via [this package](https://pkg.go.dev/lukechampine.com/uint128) to emulate 128-bit
       unsigned integers in Go)
+    - `int1` (maps to Go's `int8`)
     - `int16` (maps to `int128` via [this package](https://pkg.go.dev/go.shabbyrobe.org/num) to emulate 128-bit
       signed integers in Go)
 
