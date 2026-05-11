@@ -1,7 +1,7 @@
 package types_test
 
 import (
-	. "github.com/pg-uint/pgx-pg-uint128/types"
+	. "github.com/pg-uint/pgx-pg-uint128/v2/types"
 
 	"github.com/jackc/pgx/v5/pgtype"
 	"go.shabbyrobe.org/num"

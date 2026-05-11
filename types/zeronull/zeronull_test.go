@@ -9,7 +9,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxtest"
 	"github.com/stretchr/testify/require"
 
-	"github.com/pg-uint/pgx-pg-uint128/types/zeronull"
+	"github.com/pg-uint/pgx-pg-uint128/v2/types/zeronull"
 )
 
 var defaultConnTestRunner pgxtest.ConnTestRunner

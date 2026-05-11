@@ -27,6 +27,7 @@ GO;
 
     $int64ValFunc = genTypeInt64ValueFunc($type);
     $uint64ValFunc = genTypeUInt64ValueFunc($type);
+    $uint32CompatFunc = genTypeUInt32CompatFunc($type);
 
     $scanUint64MaxCheck = '';
     if (UINT64->canOverflow($type)) {
@@ -61,6 +62,8 @@ $int64ValFunc
 
 $uint64ValFunc
 
+$uint32CompatFunc
+
 // ScanInt64 implements the Int64Scanner interface.
 func (dst *{$type->name}) ScanInt64(n Int8) error {
 	if !n.Valid {
@@ -78,7 +81,7 @@ $maxCheck
 }
 
 // ScanUint64 implements the Uint64Scanner interface.
-func (dst *{$type->name}) ScanUint64(n UInt8) error {
+func (dst *{$type->name}) ScanUint64(n Uint64) error {
 	if !n.Valid {
 		*dst = {$type->name}{}
 		return nil
@@ -206,7 +209,7 @@ func (dst *{$type->name}) ScanInt64(n Int8) error {
 }
 
 // ScanUint64 implements the Uint64Scanner interface.
-func (dst *{$type->name}) ScanUint64(n UInt8) error {
+func (dst *{$type->name}) ScanUint64(n Uint64) error {
 	if !n.Valid {
 		*dst = {$type->name}{}
 		return nil
@@ -336,7 +339,7 @@ func (dst *{$type->name}) ScanInt64(n Int8) error {
 }
 
 // ScanUint64 implements the Uint64Scanner interface.
-func (dst *{$type->name}) ScanUint64(n UInt8) error {
+func (dst *{$type->name}) ScanUint64(n Uint64) error {
 	if !n.Valid {
 		*dst = {$type->name}{}
 		return nil
@@ -708,7 +711,7 @@ function genTypeUInt64ValueFunc(Type $type): string
     $canOverflow = $type->canOverflow(UINT64);
     $canUnderflow = $type->canUnderflow(UINT64);
 
-    $funcDef = "func (n {$type->name}) Uint64Value() (UInt8, error) {\n";
+    $funcDef = "func (n {$type->name}) Uint64Value() (Uint64, error) {\n";
 
     if ($canUnderflow) {
         // Actually underflow is only possible for signed integer
@@ -723,7 +726,7 @@ function genTypeUInt64ValueFunc(Type $type): string
 
         $funcDef .= <<<GO
 	$cmpCond {
-	    return UInt8{}, fmt.Errorf("$type->name value is less than min UInt8 value")
+	    return Uint64{}, fmt.Errorf("$type->name value is less than min UInt8 value")
 	}
 
 GO;
@@ -738,23 +741,47 @@ GO;
 
         $funcDef .= <<<GO
 	$cmpCond {
-	    return UInt8{}, fmt.Errorf("$type->name value is greater than max UInt8 value")
+	    return Uint64{}, fmt.Errorf("$type->name value is greater than max UInt8 value")
 	}
 
 GO;
     }
 
     $retVal = match ($type) {
-        UINT128 => "return UInt8{Uint64: n.{$structProp}.Lo, Valid: n.Valid}, nil",
-        INT128 => "return UInt8{Uint64: n.{$structProp}.AsUint64(), Valid: n.Valid}, nil",
+        UINT128 => "return Uint64{Uint64: n.{$structProp}.Lo, Valid: n.Valid}, nil",
+        INT128 => "return Uint64{Uint64: n.{$structProp}.AsUint64(), Valid: n.Valid}, nil",
 
-        default => "return UInt8{Uint64: uint64(n.{$structProp}), Valid: n.Valid}, nil"
+        default => "return Uint64{Uint64: uint64(n.{$structProp}), Valid: n.Valid}, nil"
     };
 
     $funcDef .= "    $retVal\n";
     $funcDef .= "}\n";
 
     return $funcDef;
+}
+
+function genTypeUInt32CompatFunc(Type $type): string
+{
+    if ($type !== UINT32) {
+        return '';
+    }
+
+    return <<<GO
+func (n UInt4) Uint32Value() (Uint32, error) {
+	return Uint32{Uint32: n.Uint32, Valid: n.Valid}, nil
+}
+
+// ScanUint32 implements the Uint32Scanner interface.
+func (dst *UInt4) ScanUint32(n Uint32) error {
+	if !n.Valid {
+		*dst = UInt4{}
+		return nil
+	}
+
+	*dst = UInt4{Uint32: n.Uint32, Valid: true}
+	return nil
+}
+GO;
 }
 
 function genCodecBinaryEncode(Type $type): string
@@ -918,6 +945,37 @@ GO;
 
 
     return $go;
+}
+
+function genCodecEncodeToUInt32Valuer(Type $type, bool $isBinary): string
+{
+    if ($type !== UINT32) {
+        return '';
+    }
+
+    $encodeName = ($isBinary ? $type->getBinaryEncodeCodecName() : $type->getTextEncodeCodecName()) . "Uint32Valuer";
+    if ($isBinary) {
+        $retVal = "return {$type->getPGIoWriteFuncName()}(buf, $type->goType(n.Uint32)), nil";
+    } else {
+        $retVal = "return append(buf, {$type->getFormatIntFunctionCall("uint64(n.Uint32)")}...), nil";
+    }
+
+    return <<<GO
+type $encodeName struct{}
+
+func ($encodeName) Encode(value any, buf []byte) (newBuf []byte, err error) {
+	n, err := value.(Uint32Valuer).Uint32Value()
+	if err != nil {
+		return nil, err
+	}
+
+	if !n.Valid {
+		return nil, nil
+	}
+
+	$retVal
+}
+GO;
 }
 
 function genCodecTextEncode(Type $type): string
@@ -1217,14 +1275,14 @@ function genCodecBinaryScanToUInt64Scanner(Type $type): string
     $ending = <<<GO
 	n := $wideType({$type->getPGIoReadFuncName()}(src))
 
-	return s.ScanUint64(UInt8{Uint64: n, Valid: true})
+	return s.ScanUint64(Uint64{Uint64: n, Valid: true})
 GO;
 
     if ($type === INT8) {
         $ending = <<<GO
 	n := $wideType({$type->getPGIoReadFuncName()}(src))
 
-	return s.ScanUint64(UInt8{Uint64: uint64(n), Valid: true})
+	return s.ScanUint64(Uint64{Uint64: uint64(n), Valid: true})
 GO;
     }
 
@@ -1235,7 +1293,7 @@ GO;
 	    return fmt.Errorf("$type->name value %s is greater than max value for UInt8", n.String())
 	}
 
-	return s.ScanUint64(UInt8{Uint64: n.Lo, Valid: true})
+	return s.ScanUint64(Uint64{Uint64: n.Lo, Valid: true})
 GO;
     }
 
@@ -1246,7 +1304,7 @@ GO;
 	    return fmt.Errorf("$type->name value %s is greater than max value for UInt8", n.String())
 	}
 
-	return s.ScanUint64(UInt8{Uint64: n.AsUint64(), Valid: true})
+	return s.ScanUint64(Uint64{Uint64: n.AsUint64(), Valid: true})
 GO;
     }
 
@@ -1261,7 +1319,7 @@ func ($scanName) Scan(src []byte, dst any) error {
 	}
 
 	if src == nil {
-		return s.ScanUint64(UInt8{})
+		return s.ScanUint64(Uint64{})
 	}
 
 	if len(src) != $type->byteSize {
@@ -1269,6 +1327,37 @@ func ($scanName) Scan(src []byte, dst any) error {
 	}
 
 $ending
+}
+GO;
+}
+
+function genCodecBinaryScanToUInt32Scanner(Type $type): string
+{
+    if ($type !== UINT32) {
+        return '';
+    }
+
+    $scanName = "scanPlanBinary{$type->name}ToUint32Scanner";
+
+    return <<<GO
+type $scanName struct{}
+
+func ($scanName) Scan(src []byte, dst any) error {
+	s, ok := (dst).(Uint32Scanner)
+	if !ok {
+		return ErrScanTargetTypeChanged
+	}
+
+	if src == nil {
+		return s.ScanUint32(Uint32{})
+	}
+
+	if len(src) != {$type->byteSize} {
+		return fmt.Errorf("invalid length for {$type->pgName}: %v", len(src))
+	}
+
+	n := {$type->getPGIoReadFuncName()}(src)
+	return s.ScanUint32(Uint32{Uint32: uint32(n), Valid: true})
 }
 GO;
 }
@@ -1306,6 +1395,10 @@ function genCodec(TypeConfig $typeConfig): string
 {
     $type = $typeConfig->type;
     $codecName = "{$type->name}Codec";
+    $u32EncodeCaseBinary = $type === UINT32 ? "\n\t\tcase Uint32Valuer:\n\t\t\treturn {$type->getBinaryEncodeCodecName()}Uint32Valuer{}" : "";
+    $u32EncodeCaseText = $type === UINT32 ? "\n\t\tcase Uint32Valuer:\n\t\t\treturn {$type->getTextEncodeCodecName()}Uint32Valuer{}" : "";
+    $u32ScanCaseBinary = $type === UINT32 ? "\n\t\tcase Uint32Scanner:\n\t\t\treturn scanPlanBinary{$type->name}ToUint32Scanner{}" : "";
+    $u32ScanCaseText = $type === UINT32 ? "\n\t\tcase Uint32Scanner:\n\t\t    return scanPlanTextAnyToUint32Scanner{}" : "";
 
     $buf = <<<GO
 type {$codecName} struct{}
@@ -1326,6 +1419,7 @@ func ({$codecName}) PlanEncode(m *Map, oid uint32, format int16, value any) Enco
 			return {$type->getBinaryEncodeCodecName()}{}
 		case Uint64Valuer:
 			return {$type->getBinaryEncodeCodecName()}Uint64Valuer{}
+{$u32EncodeCaseBinary}
 		case Int64Valuer:
 			return {$type->getBinaryEncodeCodecName()}Int64Valuer{}
 		}
@@ -1335,6 +1429,7 @@ func ({$codecName}) PlanEncode(m *Map, oid uint32, format int16, value any) Enco
 			return {$type->getTextEncodeCodecName()}{}
 		case Uint64Valuer:
 			return {$type->getTextEncodeCodecName()}Uint64Valuer{}
+{$u32EncodeCaseText}
 		case Int64Valuer:
 			return {$type->getTextEncodeCodecName()}Int64Valuer{}
 		}
@@ -1356,6 +1451,8 @@ GO;
 
     $buf .= genCodecEncodeToUInt64Valuer($type, isBinary: true) . "\n";
     $buf .= genCodecEncodeToUInt64Valuer($type, isBinary: false) . "\n";
+    $buf .= genCodecEncodeToUInt32Valuer($type, isBinary: true) . "\n";
+    $buf .= genCodecEncodeToUInt32Valuer($type, isBinary: false) . "\n";
     $buf .= "\n";
 
     $binScanParts = [];
@@ -1393,6 +1490,7 @@ $binScansSwitchBody
 			return $binToInt64ScannerName{}
 		case Uint64Scanner:
 			return $binToUInt64ScannerName{}
+{$u32ScanCaseBinary}
 		case TextScanner:
 			return $binToTextScannerName{}
 		}
@@ -1403,6 +1501,7 @@ $txtScansSwitchBody
 		    return scanPlanTextAnyToInt64Scanner{}
 		case Uint64Scanner:
 		    return scanPlanTextAnyToUint64Scanner{}
+{$u32ScanCaseText}
 		}
 	}
 
@@ -1445,6 +1544,7 @@ GO;
     $buf .= genCodecBinaryScanToTextScanner($type) . "\n\n";
     $buf .= genCodecBinaryScanToInt64Scanner($type) . "\n\n";
     $buf .= genCodecBinaryScanToUInt64Scanner($type) . "\n\n";
+    $buf .= genCodecBinaryScanToUInt32Scanner($type) . "\n\n";
 
     $buf .= "\n\n";
 
@@ -1718,14 +1818,14 @@ const TYPE_INCLUDES = [
     "math",
     "strconv",
     "",
-    "github.com/pg-uint/pgx-pg-uint128/pgio",
+    "github.com/pg-uint/pgx-pg-uint128/v2/pgio",
     "",
     "." => "github.com/jackc/pgx/v5/pgtype",
     "",
     "lukechampine.com/uint128",
     "",
     "go.shabbyrobe.org/num",
-    "github.com/pg-uint/pgx-pg-uint128/int128",
+    "github.com/pg-uint/pgx-pg-uint128/v2/int128",
 ];
 
 const TYPE_ZERONULL_INCLUDES = [
@@ -1733,7 +1833,7 @@ const TYPE_ZERONULL_INCLUDES = [
     "fmt",
     "math",
     "",
-    "github.com/pg-uint/pgx-pg-uint128/types"
+    "github.com/pg-uint/pgx-pg-uint128/v2/types"
 ];
 
 $header = <<<GO
@@ -1772,7 +1872,6 @@ foreach (CONFIGURED_TYPES as $type) {
     $fileHeader .= genImportsSection($typeIncludes);
 
     $buf = $fileHeader . "\n" . $buf;
-
     file_put_contents("types/{$type->type->getFilename()}", $buf);
 
     $buf = '';

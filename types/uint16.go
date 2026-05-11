@@ -9,13 +9,13 @@ import (
 	"math"
 	"strconv"
 
-	"github.com/pg-uint/pgx-pg-uint128/pgio"
+	"github.com/pg-uint/pgx-pg-uint128/v2/pgio"
 
 	. "github.com/jackc/pgx/v5/pgtype"
 
 	"lukechampine.com/uint128"
 
-	"github.com/pg-uint/pgx-pg-uint128/int128"
+	"github.com/pg-uint/pgx-pg-uint128/v2/int128"
 	"go.shabbyrobe.org/num"
 )
 
@@ -31,11 +31,11 @@ func (n UInt16) Int64Value() (Int8, error) {
 	return Int8{Int64: int64(n.Uint128.Lo), Valid: n.Valid}, nil
 }
 
-func (n UInt16) Uint64Value() (UInt8, error) {
+func (n UInt16) Uint64Value() (Uint64, error) {
 	if n.Uint128.Cmp64(math.MaxUint64) > 0 {
-		return UInt8{}, fmt.Errorf("UInt16 value is greater than max UInt8 value")
+		return Uint64{}, fmt.Errorf("UInt16 value is greater than max UInt8 value")
 	}
-	return UInt8{Uint64: n.Uint128.Lo, Valid: n.Valid}, nil
+	return Uint64{Uint64: n.Uint128.Lo, Valid: n.Valid}, nil
 }
 
 // ScanInt64 implements the Int64Scanner interface.
@@ -55,7 +55,7 @@ func (dst *UInt16) ScanInt64(n Int8) error {
 }
 
 // ScanUint64 implements the Uint64Scanner interface.
-func (dst *UInt16) ScanUint64(n UInt8) error {
+func (dst *UInt16) ScanUint64(n Uint64) error {
 	if !n.Valid {
 		*dst = UInt16{}
 		return nil
@@ -161,6 +161,7 @@ func (UInt16Codec) PlanEncode(m *Map, oid uint32, format int16, value any) Encod
 			return encodePlanUInt16CodecBinaryUint128{}
 		case Uint64Valuer:
 			return encodePlanUInt16CodecBinaryUint128Uint64Valuer{}
+
 		case Int64Valuer:
 			return encodePlanUInt16CodecBinaryUint128Int64Valuer{}
 		}
@@ -170,6 +171,7 @@ func (UInt16Codec) PlanEncode(m *Map, oid uint32, format int16, value any) Encod
 			return encodePlanUInt16CodecTextUint128{}
 		case Uint64Valuer:
 			return encodePlanUInt16CodecTextUint128Uint64Valuer{}
+
 		case Int64Valuer:
 			return encodePlanUInt16CodecTextUint128Int64Valuer{}
 		}
@@ -292,6 +294,7 @@ func (UInt16Codec) PlanScan(m *Map, oid uint32, format int16, target any) ScanPl
 			return scanPlanBinaryUInt16ToInt64Scanner{}
 		case Uint64Scanner:
 			return scanPlanBinaryUInt16ToUint64Scanner{}
+
 		case TextScanner:
 			return scanPlanBinaryUInt16ToTextScanner{}
 		}
@@ -325,6 +328,7 @@ func (UInt16Codec) PlanScan(m *Map, oid uint32, format int16, target any) ScanPl
 			return scanPlanTextAnyToInt64Scanner{}
 		case Uint64Scanner:
 			return scanPlanTextAnyToUint64Scanner{}
+
 		}
 	}
 
@@ -709,7 +713,7 @@ func (scanPlanBinaryUInt16ToUint64Scanner) Scan(src []byte, dst any) error {
 	}
 
 	if src == nil {
-		return s.ScanUint64(UInt8{})
+		return s.ScanUint64(Uint64{})
 	}
 
 	if len(src) != 16 {
@@ -721,7 +725,7 @@ func (scanPlanBinaryUInt16ToUint64Scanner) Scan(src []byte, dst any) error {
 		return fmt.Errorf("UInt16 value %s is greater than max value for UInt8", n.String())
 	}
 
-	return s.ScanUint64(UInt8{Uint64: n.Lo, Valid: true})
+	return s.ScanUint64(Uint64{Uint64: n.Lo, Valid: true})
 }
 
 type scanPlanTextUInt16ToUint8 struct{}

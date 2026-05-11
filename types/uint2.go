@@ -9,13 +9,13 @@ import (
 	"math"
 	"strconv"
 
-	"github.com/pg-uint/pgx-pg-uint128/pgio"
+	"github.com/pg-uint/pgx-pg-uint128/v2/pgio"
 
 	. "github.com/jackc/pgx/v5/pgtype"
 
 	"lukechampine.com/uint128"
 
-	"github.com/pg-uint/pgx-pg-uint128/int128"
+	"github.com/pg-uint/pgx-pg-uint128/v2/int128"
 	"go.shabbyrobe.org/num"
 )
 
@@ -28,8 +28,8 @@ func (n UInt2) Int64Value() (Int8, error) {
 	return Int8{Int64: int64(n.Uint16), Valid: n.Valid}, nil
 }
 
-func (n UInt2) Uint64Value() (UInt8, error) {
-	return UInt8{Uint64: uint64(n.Uint16), Valid: n.Valid}, nil
+func (n UInt2) Uint64Value() (Uint64, error) {
+	return Uint64{Uint64: uint64(n.Uint16), Valid: n.Valid}, nil
 }
 
 // ScanInt64 implements the Int64Scanner interface.
@@ -51,7 +51,7 @@ func (dst *UInt2) ScanInt64(n Int8) error {
 }
 
 // ScanUint64 implements the Uint64Scanner interface.
-func (dst *UInt2) ScanUint64(n UInt8) error {
+func (dst *UInt2) ScanUint64(n Uint64) error {
 	if !n.Valid {
 		*dst = UInt2{}
 		return nil
@@ -157,6 +157,7 @@ func (UInt2Codec) PlanEncode(m *Map, oid uint32, format int16, value any) Encode
 			return encodePlanUInt2CodecBinaryUint16{}
 		case Uint64Valuer:
 			return encodePlanUInt2CodecBinaryUint16Uint64Valuer{}
+
 		case Int64Valuer:
 			return encodePlanUInt2CodecBinaryUint16Int64Valuer{}
 		}
@@ -166,6 +167,7 @@ func (UInt2Codec) PlanEncode(m *Map, oid uint32, format int16, value any) Encode
 			return encodePlanUInt2CodecTextUint16{}
 		case Uint64Valuer:
 			return encodePlanUInt2CodecTextUint16Uint64Valuer{}
+
 		case Int64Valuer:
 			return encodePlanUInt2CodecTextUint16Int64Valuer{}
 		}
@@ -302,6 +304,7 @@ func (UInt2Codec) PlanScan(m *Map, oid uint32, format int16, target any) ScanPla
 			return scanPlanBinaryUInt2ToInt64Scanner{}
 		case Uint64Scanner:
 			return scanPlanBinaryUInt2ToUint64Scanner{}
+
 		case TextScanner:
 			return scanPlanBinaryUInt2ToTextScanner{}
 		}
@@ -335,6 +338,7 @@ func (UInt2Codec) PlanScan(m *Map, oid uint32, format int16, target any) ScanPla
 			return scanPlanTextAnyToInt64Scanner{}
 		case Uint64Scanner:
 			return scanPlanTextAnyToUint64Scanner{}
+
 		}
 	}
 
@@ -700,7 +704,7 @@ func (scanPlanBinaryUInt2ToUint64Scanner) Scan(src []byte, dst any) error {
 	}
 
 	if src == nil {
-		return s.ScanUint64(UInt8{})
+		return s.ScanUint64(Uint64{})
 	}
 
 	if len(src) != 2 {
@@ -709,7 +713,7 @@ func (scanPlanBinaryUInt2ToUint64Scanner) Scan(src []byte, dst any) error {
 
 	n := uint64(pgio.ReadUint16(src))
 
-	return s.ScanUint64(UInt8{Uint64: n, Valid: true})
+	return s.ScanUint64(Uint64{Uint64: n, Valid: true})
 }
 
 type scanPlanTextUInt2ToUint8 struct{}

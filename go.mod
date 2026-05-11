@@ -1,9 +1,9 @@
-module github.com/pg-uint/pgx-pg-uint128
+module github.com/pg-uint/pgx-pg-uint128/v2
 
 go 1.21
 
 require (
-	github.com/jackc/pgx/v5 v5.6.0
+	github.com/jackc/pgx/v5 v5.7.2
 	github.com/stretchr/testify v1.8.1
 	go.shabbyrobe.org/num v0.0.0-20240907080048-e432fd58d3b6
 	lukechampine.com/uint128 v1.3.0
@@ -12,8 +12,8 @@ require (
 require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect
-	github.com/jackc/pgservicefile v0.0.0-20221227161230-091c0ba34f0a // indirect
-	github.com/jackc/puddle/v2 v2.2.1 // indirect
+	github.com/jackc/pgservicefile v0.0.0-20240606120523-5a60cdf6a761 // indirect
+	github.com/jackc/puddle/v2 v2.2.2 // indirect
 	github.com/kr/text v0.2.0 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/rogpeppe/go-internal v1.12.0 // indirect

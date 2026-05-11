@@ -6,7 +6,7 @@ the Go [pgx](https://github.com/jackc/pgx) driver.
 ## Requirements
 
 - PostgreSQL 12+ with the [pg-uint128](https://github.com/pg-uint/pg-uint128) extension installed
-- `pgx` driver version 5.6.0+
+- `pgx` driver version 5.7.x+
 - `Go` version 1.21+
 
 ## Features
@@ -40,7 +40,7 @@ the Go [pgx](https://github.com/jackc/pgx) driver.
 To add `pgx-pg-uint128` to your Go project, run:
 
 ```sh
-go get github.com/pg-uint/pgx-pg-uint128
+go get github.com/pg-uint/pgx-pg-uint128/v2
 ```
 
 ## Usage
@@ -55,8 +55,8 @@ import (
 
 	"github.com/jackc/pgx/v5"
 
-	"github.com/pg-uint/pgx-pg-uint128/types"
-	"github.com/pg-uint/pgx-pg-uint128/types/zeronull"
+	"github.com/pg-uint/pgx-pg-uint128/v2/types"
+	"github.com/pg-uint/pgx-pg-uint128/v2/types/zeronull"
 )
 
 func main() {
@@ -82,3 +82,15 @@ func main() {
 - See these examples for pgxpool:
     - [Simple pgxpool usage](examples/pgxpool/simple/main.go)
     - [Caching types between connections](examples/pgxpool/cache/main.go)
+
+## Compatibility Notes
+
+- Current tested target is `pgx v5.7.x`.
+- If you use `pgxpool`, register the codecs in `AfterConnect`:
+
+```go
+poolCfg.AfterConnect = func(ctx context.Context, conn *pgx.Conn) error {
+	_, err := types.RegisterAll(ctx, conn)
+	return err
+}
+```
