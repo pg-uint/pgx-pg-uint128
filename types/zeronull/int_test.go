@@ -8,7 +8,7 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxtest"
 
-	"github.com/pg-uint/pgx-pg-uint128/types/zeronull"
+	"github.com/pg-uint/pgx-pg-uint128/v2/types/zeronull"
 )
 
 func isExpectedEq(a any) func(any) bool {

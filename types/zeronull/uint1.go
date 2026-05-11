@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"math"
 
-	"github.com/pg-uint/pgx-pg-uint128/types"
+	"github.com/pg-uint/pgx-pg-uint128/v2/types"
 )
 
 type UInt1 uint8
